@@ -1,5 +1,9 @@
 #include "game.h"
+#include <fstream>
 #include <iostream>
+#include <sstream>
+#include <vector>
+#include <algorithm>
 #include "SDL.h"
 
 Game::Game(std::size_t grid_width, std::size_t grid_height)
@@ -85,3 +89,80 @@ void Game::Update() {
 
 int Game::GetScore() const { return score; }
 int Game::GetSize() const { return snake.size; }
+// MY CODE: 1. Save the player's high scores to a text file called highscores.txt in CSV format.
+std::string Game::GetPlayerName() const { return playerName; }
+void Game::SetPlayerName(std::string name) { playerName = name; }
+
+
+void Game::SaveScoreToFile() {
+  std::ifstream scoresFile;
+  scoresFile.open(scoresFilePath);
+  std::vector<std::pair<std::string, int>> scores;
+
+  if (scoresFile.is_open()) {
+    std::string line;
+    while (std::getline(scoresFile, line)) {
+      std::istringstream iss(line);
+      std::string name;
+      std::string divider;
+      int score;
+      if (iss >> name >> divider >> score) {
+        scores.push_back(std::make_pair(name, score));
+      }
+    }
+    scoresFile.close();
+  } else {
+    std::cerr << "Unable to open file: " << scoresFilePath << std::endl;
+    std::ofstream newScoresFile(scoresFilePath);
+    if (newScoresFile.is_open()) {
+      newScoresFile.close();
+      SaveScoreToFile();
+    } else {
+      std::cerr << "Unable to create file: " << scoresFilePath << std::endl;
+    }
+    return;
+  }
+
+  scores.push_back(std::make_pair(playerName, score));
+  std::sort(scores.begin(), scores.end(), [](const auto& a, const auto& b) {
+    return a.second > b.second;
+  });
+
+  std::ofstream updatedScoresFile;
+  updatedScoresFile.open(scoresFilePath);
+  if (updatedScoresFile.is_open()) {
+    int count = 0;
+    for (const auto& score : scores) {
+      if (count >= 10) {
+        break;
+      }
+
+      int maxCount = MAX_PLAYER_NAME_LENGTH + 2; 
+      std::string divider;
+      maxCount -= score.first.length();
+      divider = std::string(maxCount, '-');
+
+      updatedScoresFile << score.first << " " << divider << " " << score.second << std::endl;
+      count++;
+    }
+    updatedScoresFile.close();
+  } else {
+    std::cerr << "Unable to open file: " << scoresFilePath << std::endl;
+  }
+}
+
+void Game::LoadScoreFromFile() {
+  std::ifstream scoresFile;
+  scoresFile.open(scoresFilePath);
+  if (scoresFile.is_open()) {
+    std::cout << "\nSnake Game High Scores!!" << std::endl;
+    std::string line;
+    while (std::getline(scoresFile, line)) {
+      std::cout << line << std::endl;
+    }
+    scoresFile.close();
+  } else {
+    std::cerr << "Unable to open file: " << scoresFilePath << std::endl;
+  }
+}
+//
