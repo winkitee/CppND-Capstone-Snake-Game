@@ -3,15 +3,41 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <future>
+#include <thread>
 #include <algorithm>
 #include "SDL.h"
 
 Game::Game(std::size_t grid_width, std::size_t grid_height)
-    : snake(grid_width, grid_height),
+    : grid_width(grid_width),
+      grid_height(grid_height),
+      snake(grid_width, grid_height),
       engine(dev()),
       random_w(0, static_cast<int>(grid_width - 1)),
       random_h(0, static_cast<int>(grid_height - 1)) {
   PlaceFood();
+
+  std::thread obstacle_thread([this, grid_width, grid_height]() {
+    while (true) {
+      for (auto &obstacle : obstacles) {
+        obstacle.Update();
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    }
+  });
+  obstacle_thread.detach();
+  special_food_thread = std::thread(&Game::SpecialFoodThread, this);
+  special_food_move_thread = std::thread(&Game::SpecialFoodMoveThread, this);
+}
+
+Game::~Game() {
+  game_over = true;
+  if (special_food_thread.joinable()) {
+    special_food_thread.join();
+  }
+  if (special_food_move_thread.joinable()) {
+    special_food_move_thread.join();
+  }
 }
 
 void Game::Run(Controller const &controller, Renderer &renderer,
@@ -29,7 +55,7 @@ void Game::Run(Controller const &controller, Renderer &renderer,
     // Input, Update, Render - the main game loop.
     controller.HandleInput(running, snake);
     Update();
-    renderer.Render(snake, food);
+    renderer.Render(snake, food, special_food, foods, obstacles, fixedObstacles);
 
     frame_end = SDL_GetTicks();
 
@@ -70,7 +96,10 @@ void Game::PlaceFood() {
 }
 
 void Game::Update() {
-  if (!snake.alive) return;
+  if (!snake.alive) { 
+    game_over = true;
+    return;
+  }
 
   snake.Update();
 
@@ -85,6 +114,77 @@ void Game::Update() {
     snake.GrowBody();
     snake.speed += 0.02;
   }
+
+  for (auto it = foods.begin(); it != foods.end(); ++it) {
+    if (it->x == new_x && it->y == new_y) {
+      foods.erase(it);
+      score++;
+      lastFixedObstacleScore = score;
+      snake.GrowBody();
+      snake.speed += 0.002;
+      break;
+    }
+  }
+
+  for (const auto &obstacle : obstacles) {
+    if (obstacle.x == new_x && obstacle.y == new_y) {
+      snake.alive = false;
+      return;
+    }
+  }
+
+  // Check if the snake has collided with a fixed obstacle
+  for (const FixedObstacle& obstacle : fixedObstacles) {
+    for (const auto& position : obstacle.positions) {
+      if (position.first == new_x && position.second == new_y) {
+        // The snake has collided with a fixed obstacle, end the game
+        snake.alive = false;
+        return;
+      }
+    }
+  }
+
+  std::pair<int, int> head = std::pair(new_x, new_y);
+  std::pair<int, int> food_position = std::pair(food.x, food.y);
+
+  // Check if the score has increased and we haven't added a fixed obstacle for this score yet
+  if (score != lastFixedObstacleScore) {
+    // Add a new fixed obstacle
+    fixedObstacles.emplace_back(
+      FixedObstacle(grid_width, grid_height, head, food_position)
+    );
+
+    // Update the last score we added a fixed obstacle at
+    lastFixedObstacleScore = score;
+  }
+  
+  if (score % 5 == 0 && score != lastObstacleScore) {
+    obstacles.emplace_back(
+      Obstacle(grid_width, grid_height, head)
+    );
+
+    lastObstacleScore = score;
+  }
+
+  std::unique_lock<std::mutex> lck(mtx);
+  if (special_food_exists && special_food.x == new_x && special_food.y == new_y) {
+    special_food_exists = false;
+    special_food = {-1, -1};
+
+    // Change all obstacles to food
+    for (auto &obstacle : fixedObstacles) {
+      for (const auto& position : obstacle.positions) {
+        foods.emplace_back(SDL_Point{position.first, position.second});
+      }
+    }
+    fixedObstacles.clear();
+
+    for (auto &obstacle : obstacles) {
+      foods.emplace_back(SDL_Point{obstacle.x, obstacle.y});
+    }
+    obstacles.clear();
+  }
+
 }
 
 int Game::GetScore() const { return score; }
@@ -166,3 +266,40 @@ void Game::LoadScoreFromFile() {
   }
 }
 //
+
+void Game::SpecialFoodThread() {
+  while (!game_over) {
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    std::unique_lock<std::mutex> lck(mtx);
+    if (!special_food_exists) {
+      int x = random_w(engine);
+      int y = random_h(engine);
+      if (x == food.x && y == food.y) {
+        continue;
+      }
+      special_food = {random_w(engine), random_h(engine)};
+      special_food_exists = true;
+      cv.notify_one();
+    }
+  }
+}
+
+void Game::SpecialFoodMoveThread() {
+    std::vector<std::pair<int, int>> directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+
+  while (!game_over) {
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::unique_lock<std::mutex> lck(mtx);
+    cv.wait(lck, [this] { return special_food_exists; });
+    if (special_food_exists) {
+      std::uniform_int_distribution<int> random_direction(0, directions.size() - 1);
+      auto direction = directions[random_direction(engine)];
+      special_food.x += direction.first;
+      special_food.y += direction.second;
+
+      // Ensure the special food stays within the game boundaries
+      special_food.x = std::max(0, std::min(special_food.x, grid_width - 1));
+      special_food.y = std::max(0, std::min(special_food.y, grid_height - 1));
+    }
+  }
+}

@@ -38,7 +38,7 @@ Renderer::~Renderer() {
   SDL_Quit();
 }
 
-void Renderer::Render(Snake const snake, SDL_Point const &food) {
+void Renderer::Render(Snake const snake, SDL_Point const &food, SDL_Point const &special_food, std::vector<SDL_Point> const &foods, std::vector<Obstacle> const &obstacles, std::vector<FixedObstacle> const &fixedObstacles) {
   SDL_Rect block;
   block.w = screen_width / grid_width;
   block.h = screen_height / grid_height;
@@ -52,6 +52,22 @@ void Renderer::Render(Snake const snake, SDL_Point const &food) {
   block.x = food.x * block.w;
   block.y = food.y * block.h;
   SDL_RenderFillRect(sdl_renderer, &block);
+
+  // Render special food
+  SDL_SetRenderDrawColor(sdl_renderer, 0x00, 0x00, 0xFF, 0xFF);
+  block.x = special_food.x * block.w;
+  block.y = special_food.y * block.h;
+  SDL_RenderFillRect(sdl_renderer, &block);
+
+  for (const auto &food : foods) {
+    SDL_SetRenderDrawColor(sdl_renderer, 0x80, 0xFF, 0x00, 0xFF);
+    block.x = food.x * block.w;
+    block.y = food.y * block.h;
+    SDL_RenderFillRect(sdl_renderer, &block);
+  }
+
+  RenderObstacles(obstacles);
+  RenderFixedObstacles(fixedObstacles);
 
   // Render snake's body
   SDL_SetRenderDrawColor(sdl_renderer, 0xFF, 0xFF, 0xFF, 0xFF);
@@ -78,4 +94,34 @@ void Renderer::Render(Snake const snake, SDL_Point const &food) {
 void Renderer::UpdateWindowTitle(int score, int fps) {
   std::string title{"Snake Score: " + std::to_string(score) + " FPS: " + std::to_string(fps)};
   SDL_SetWindowTitle(sdl_window, title.c_str());
+}
+
+void Renderer::RenderObstacles(const std::vector<Obstacle> &obstacles) {
+  SDL_Rect block;
+  block.w = screen_width / grid_width;
+  block.h = screen_height / grid_height;
+
+  // Render obstacles
+  SDL_SetRenderDrawColor(sdl_renderer, 0xFF, 0x00, 0x00, 0xFF);
+  for (const auto &obstacle : obstacles) {
+    block.x = obstacle.x * block.w;
+    block.y = obstacle.y * block.h;
+    SDL_RenderFillRect(sdl_renderer, &block);
+  }
+}
+
+void Renderer::RenderFixedObstacles(const std::vector<FixedObstacle> &fixedObstacles) {
+  SDL_Rect block;
+  block.w = screen_width / grid_width;
+  block.h = screen_height / grid_height;
+
+  // Render fixed obstacles
+  SDL_SetRenderDrawColor(sdl_renderer, 0x33, 0x33, 0x33, 0xFF);
+  for (const FixedObstacle& obstacle : fixedObstacles) {
+    for (const auto& position : obstacle.positions) {
+      block.x = position.first * block.w;
+      block.y = position.second * block.h;
+      SDL_RenderFillRect(sdl_renderer, &block);
+    }
+  }
 }
