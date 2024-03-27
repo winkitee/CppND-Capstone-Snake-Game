@@ -8,9 +8,11 @@ Renderer::Renderer(const std::size_t screen_width,
     : screen_width(screen_width),
       screen_height(screen_height),
       grid_width(grid_width),
-      grid_height(grid_height) {
+      grid_height(grid_height)
+{
   // Initialize SDL
-  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+  if (SDL_Init(SDL_INIT_VIDEO) < 0)
+  {
     std::cerr << "SDL could not initialize.\n";
     std::cerr << "SDL_Error: " << SDL_GetError() << "\n";
   }
@@ -20,25 +22,36 @@ Renderer::Renderer(const std::size_t screen_width,
                                 SDL_WINDOWPOS_CENTERED, screen_width,
                                 screen_height, SDL_WINDOW_SHOWN);
 
-  if (nullptr == sdl_window) {
+  if (nullptr == sdl_window)
+  {
     std::cerr << "Window could not be created.\n";
     std::cerr << " SDL_Error: " << SDL_GetError() << "\n";
   }
 
   // Create renderer
   sdl_renderer = SDL_CreateRenderer(sdl_window, -1, SDL_RENDERER_ACCELERATED);
-  if (nullptr == sdl_renderer) {
+  if (nullptr == sdl_renderer)
+  {
     std::cerr << "Renderer could not be created.\n";
     std::cerr << "SDL_Error: " << SDL_GetError() << "\n";
   }
 }
 
-Renderer::~Renderer() {
+Renderer::~Renderer()
+{
   SDL_DestroyWindow(sdl_window);
   SDL_Quit();
 }
 
-void Renderer::Render(Snake const snake, SDL_Point const &food, SDL_Point const &special_food, std::vector<SDL_Point> const &foods, std::vector<Obstacle> const &obstacles, std::vector<FixedObstacle> const &fixedObstacles) {
+void Renderer::Render(
+    std::shared_ptr<Snake> const snake,
+    std::shared_ptr<Snake> const computerSnake,
+    SDL_Point const &food,
+    SDL_Point const &special_food,
+    std::vector<SDL_Point> const &foods,
+    std::vector<Obstacle> const &obstacles,
+    std::vector<FixedObstacle> const &fixedObstacles)
+{
   SDL_Rect block;
   block.w = screen_width / grid_width;
   block.h = screen_height / grid_height;
@@ -59,7 +72,8 @@ void Renderer::Render(Snake const snake, SDL_Point const &food, SDL_Point const 
   block.y = special_food.y * block.h;
   SDL_RenderFillRect(sdl_renderer, &block);
 
-  for (const auto &food : foods) {
+  for (const auto &food : foods)
+  {
     SDL_SetRenderDrawColor(sdl_renderer, 0x80, 0xFF, 0x00, 0xFF);
     block.x = food.x * block.w;
     block.y = food.y * block.h;
@@ -71,18 +85,44 @@ void Renderer::Render(Snake const snake, SDL_Point const &food, SDL_Point const 
 
   // Render snake's body
   SDL_SetRenderDrawColor(sdl_renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-  for (SDL_Point const &point : snake.body) {
+  for (SDL_Point const &point : snake->body)
+  {
     block.x = point.x * block.w;
     block.y = point.y * block.h;
     SDL_RenderFillRect(sdl_renderer, &block);
   }
 
   // Render snake's head
-  block.x = static_cast<int>(snake.head_x) * block.w;
-  block.y = static_cast<int>(snake.head_y) * block.h;
-  if (snake.alive) {
+  block.x = static_cast<int>(snake->head_x) * block.w;
+  block.y = static_cast<int>(snake->head_y) * block.h;
+  if (snake->alive)
+  {
     SDL_SetRenderDrawColor(sdl_renderer, 0x00, 0x7A, 0xCC, 0xFF);
-  } else {
+  }
+  else
+  {
+    SDL_SetRenderDrawColor(sdl_renderer, 0xFF, 0x00, 0x00, 0xFF);
+  }
+  SDL_RenderFillRect(sdl_renderer, &block);
+
+  // Render computer snake's body
+  SDL_SetRenderDrawColor(sdl_renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+  for (SDL_Point const &point : computerSnake->body)
+  {
+    block.x = point.x * block.w;
+    block.y = point.y * block.h;
+    SDL_RenderFillRect(sdl_renderer, &block);
+  }
+
+  // Render computer snake's head
+  block.x = static_cast<int>(computerSnake->head_x) * block.w;
+  block.y = static_cast<int>(computerSnake->head_y) * block.h;
+  if (computerSnake->alive)
+  {
+    SDL_SetRenderDrawColor(sdl_renderer, 0xCC, 0x7A, 0xCC, 0xFF);
+  }
+  else
+  {
     SDL_SetRenderDrawColor(sdl_renderer, 0xFF, 0x00, 0x00, 0xFF);
   }
   SDL_RenderFillRect(sdl_renderer, &block);
@@ -91,34 +131,40 @@ void Renderer::Render(Snake const snake, SDL_Point const &food, SDL_Point const 
   SDL_RenderPresent(sdl_renderer);
 }
 
-void Renderer::UpdateWindowTitle(int score, int fps) {
+void Renderer::UpdateWindowTitle(int score, int fps)
+{
   std::string title{"Snake Score: " + std::to_string(score) + " FPS: " + std::to_string(fps)};
   SDL_SetWindowTitle(sdl_window, title.c_str());
 }
 
-void Renderer::RenderObstacles(const std::vector<Obstacle> &obstacles) {
+void Renderer::RenderObstacles(const std::vector<Obstacle> &obstacles)
+{
   SDL_Rect block;
   block.w = screen_width / grid_width;
   block.h = screen_height / grid_height;
 
   // Render obstacles
   SDL_SetRenderDrawColor(sdl_renderer, 0xFF, 0x00, 0x00, 0xFF);
-  for (const auto &obstacle : obstacles) {
+  for (const auto &obstacle : obstacles)
+  {
     block.x = obstacle.x * block.w;
     block.y = obstacle.y * block.h;
     SDL_RenderFillRect(sdl_renderer, &block);
   }
 }
 
-void Renderer::RenderFixedObstacles(const std::vector<FixedObstacle> &fixedObstacles) {
+void Renderer::RenderFixedObstacles(const std::vector<FixedObstacle> &fixedObstacles)
+{
   SDL_Rect block;
   block.w = screen_width / grid_width;
   block.h = screen_height / grid_height;
 
   // Render fixed obstacles
   SDL_SetRenderDrawColor(sdl_renderer, 0x33, 0x33, 0x33, 0xFF);
-  for (const FixedObstacle& obstacle : fixedObstacles) {
-    for (const auto& position : obstacle.positions) {
+  for (const FixedObstacle &obstacle : fixedObstacles)
+  {
+    for (const auto &position : obstacle.positions)
+    {
       block.x = position.first * block.w;
       block.y = position.second * block.h;
       SDL_RenderFillRect(sdl_renderer, &block);

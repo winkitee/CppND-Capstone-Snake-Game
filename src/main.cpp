@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <memory>
 #include "controller.h"
 #include "game.h"
 #include "renderer.h"
@@ -14,11 +15,11 @@ int main() {
 
   Renderer renderer(kScreenWidth, kScreenHeight, kGridWidth, kGridHeight);
   Controller controller;
-  Game game(kGridWidth, kGridHeight);
-  game.Run(controller, renderer, kMsPerFrame);
+  std::unique_ptr<Game> game_ptr = std::make_unique<Game>(kGridWidth, kGridHeight);
+  game_ptr->Run(controller, renderer, kMsPerFrame);
   std::cout << "Game has terminated successfully!\n";
-  std::cout << "Score: " << game.GetScore() << "\n";
-  std::cout << "Size: " << game.GetSize() << "\n";
+  std::cout << "Score: " << game_ptr->GetScore() << "\n";
+  std::cout << "Size: " << game_ptr->GetSize() << "\n";
   // MY CODE: 1. Save the player's high scores to a text file called highscores.txt in CSV format.
   std::string name;
   while (name.size() < 1 || name.size() > MAX_PLAYER_NAME_LENGTH) {
@@ -31,9 +32,9 @@ int main() {
       std::cout << "Name must be at most " << MAX_PLAYER_NAME_LENGTH << " characters." << std::endl;
     }
   }
-  game.SetPlayerName(name);
-  game.SaveScoreToFile();
-  game.LoadScoreFromFile();
+  game_ptr->SetPlayerName(name);
+  game_ptr->SaveScoreToFile();
+  game_ptr->LoadScoreFromFile();
   //
   return 0;
 }

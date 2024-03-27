@@ -2,6 +2,7 @@
 #define RENDERER_H
 
 #include <vector>
+#include <memory>
 #include "SDL.h"
 #include "snake.h"
 #include "obstacle.h"
@@ -14,7 +15,8 @@ public:
   ~Renderer();
 
   void Render(
-      Snake const snake,
+      std::shared_ptr<Snake> const snake,
+      std::shared_ptr<Snake> const computerSnake,
       SDL_Point const &food,
       SDL_Point const &special_food,
       std::vector<SDL_Point> const &foods,

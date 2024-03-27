@@ -21,7 +21,7 @@ class Obstacle {
     do {
       x = random_pos(gen);
       y = random_pos(gen);
-    } while (std::abs(x - snake_head.first) < 5 && std::abs(y - snake_head.second) < 5);
+    } while (std::abs(x - snake_head.first) < 8 && std::abs(y - snake_head.second) < 8);
 
     dx = random_d(gen) == 0 ? -1 : 1;
     dy = random_d(gen) == 0 ? -1 : 1;
@@ -54,7 +54,7 @@ class FixedObstacle {
     do {
       x = random_pos(gen);
       y = random_pos(gen);
-    } while ((std::abs(x - snake_head.first) < 3 && std::abs(y - snake_head.second) < 3) && 
+    } while ((std::abs(x - snake_head.first) < 8 && std::abs(y - snake_head.second) < 8) && 
              (std::abs(x - food_position.first) < 3 && std::abs(y - food_position.second) < 3));
     positions.push_back({x, y});
 
@@ -70,7 +70,7 @@ class FixedObstacle {
         // Ensure the new position is within the grid
         x = std::max(0, std::min(x, grid_width - 1));
         y = std::max(0, std::min(y, grid_height - 1));
-      } while ((std::abs(x - snake_head.first) < 3 && std::abs(y - snake_head.second) < 3) && 
+      } while ((std::abs(x - snake_head.first) < 8 && std::abs(y - snake_head.second) < 8) && 
                (std::abs(x - food_position.first) < 3 && std::abs(y - food_position.second) < 3));
       positions.push_back({x, y});
     }
