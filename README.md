@@ -30,6 +30,39 @@ In this project, you can build your own C++ application or extend this Snake gam
 3. Compile: `cmake .. && make`
 4. Run it: `./SnakeGame`.
 
+## New Features
+
+1. After the game ends, you can save your score. The top 10 highest scores will be displayed.
+
+  - Loops, Functions, I/O - meet at least 2 criteria
+    - A variety of control structures are added to the project.
+    - The project code is clearly organized into functions.
+    - The project reads data from an external file or writes data to a file as part of the necessary operation of the program.
+    
+2. Fixed and moving obstacles have been added to the game.
+  - Every time you eat food, a fixed obstacle will be generated in a random location.
+  - Moving obstacles will be generated in random locations at every 5-point intervals, such as 
+  at 5, 10, and 15 points.
+
+  - Object Oriented Programming - meet at least 3 criteria
+    - Classes are organized with attributes to hold data and methods to perform tasks.
+    - All class members that are set to argument values are initialized through member initialization lists.
+    - All class member functions document their effects, either through function names, comments, or formal documentation.
+
+3. Various types of food have been added to the game.
+  - Special food has been added. If there is no special food, it will be generated every 10 seconds. When you eat special food, all obstacles will change into regular food.
+  - Special food moves randomly up, down, left, or right every second.
+
+  - Concurrency - meet at least 2 criteria
+    - The project uses multiple threads or async tasks in the execution.
+    - A mutex or lock (e.g. std::lock_guard or `std::unique_lock) is used to protect data that is shared across multiple threads in the project code.
+
+4. Another snake controlled by the computer has been added to the game using the A* search algorithm. 
+  - Memory Management - meet at least 3 criteria
+    - At least two variables are defined as references, or two functions use pass-by-reference in the project code.
+    - The project uses at least one smart pointer: unique_ptr, shared_ptr, or weak_ptr.
+    - The project follows the Resource Acquisition Is Initialization pattern where appropriate, by allocating objects at compile-time, initializing objects when they are declared, and utilizing scope to ensure their automatic destruction.
+
 
 ## CC Attribution-ShareAlike 4.0 International
 
