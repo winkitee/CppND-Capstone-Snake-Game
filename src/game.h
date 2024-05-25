@@ -12,7 +12,7 @@
 #include "renderer.h"
 #include "snake.h"
 #include "obstacle.h"
-#include "route_model.h"
+#include "a_star.h"
 
 constexpr std::size_t MAX_PLAYER_NAME_LENGTH{18};
 
@@ -40,7 +40,6 @@ class Game {
   void SpecialFoodThread();
   void SpecialFoodMoveThread();
   void UpdateComputerSnake();
-  void RunTheads();
 
  private:
   std::shared_ptr<Snake> snake;
